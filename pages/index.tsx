@@ -9,7 +9,9 @@ import { Alert, AlertDescription } from '@/src/components/ui/alert'
 import { createJob, getJobs } from '@/src/lib/api'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-toastify'
+import { io } from 'socket.io-client'
 
+const socket = io('http://localhost:3001');
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([])
@@ -33,6 +35,23 @@ export default function Home() {
 
   useEffect(() => {
     fetchJobs();
+
+    // Listen for jobResolved events
+    socket.on('jobResolved', (data: { jobId; status; imageUrl }) => {
+      console.log("🚀 ~ jobResolved event received:", data);
+
+      // Update the job in the list
+      setJobs((prevJobs) =>
+        prevJobs.map((job) =>
+          job.id === data.jobId
+            ? { ...job, status: data.status, imageUrl: data.imageUrl }
+            : job
+        )
+      );
+
+      toast.success(`Job ${data.jobId} resolved!`);
+    });
+
   }, [fetchJobs]);
 
   const handleCreateJob = async () => {
