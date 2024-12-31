@@ -49,9 +49,6 @@ export default function Home() {
 
     });
 
-    // return () => {
-    //   socket.disconnect();
-    // };
 
   }, [fetchJobs]);
 
