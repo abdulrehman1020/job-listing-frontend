@@ -1,12 +1,12 @@
 'use client'
 
-import { Job } from '@/src/@types'
+import { Job, JobStatus } from '@/src/@types'
 import { CreateJobButton } from '@/src/components/CreateJobButton'
 import { JobList } from '@/src/components/JobList'
 import { JobModal } from '@/src/components/JobModal'
 import { Loader } from '@/src/components/Loader'
 import { Alert, AlertDescription } from '@/src/components/ui/alert'
-import { createJob, getJobs } from '@/src/lib/api'
+import { createJob, getJobById, getJobs } from '@/src/lib/api'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { io } from 'socket.io-client'
@@ -35,29 +35,29 @@ export default function Home() {
 
   useEffect(() => {
     fetchJobs();
+    socket.on('jobResolved', (data: { jobId: string; status: JobStatus; imageUrl: string }) => {
+      console.log("🚀 ~ socket.on ~ data:", data)
 
-    // Listen for jobResolved events
-    socket.on('jobResolved', (data: { jobId; status; imageUrl }) => {
-      console.log("🚀 ~ jobResolved event received:", data);
-
-      // Update the job in the list
-      setJobs((prevJobs) =>
-        prevJobs.map((job) =>
+      setJobs((prevJobs) => {
+        console.log("🚀 ~ socket.on ~ prevJobs:", prevJobs)
+        return prevJobs.map((job) =>
           job.id === data.jobId
             ? { ...job, status: data.status, imageUrl: data.imageUrl }
             : job
-        )
-      );
+        );
+      })
 
-      toast.success(`Job ${data.jobId} resolved!`);
     });
+
+    // return () => {
+    //   socket.disconnect();
+    // };
 
   }, [fetchJobs]);
 
   const handleCreateJob = async () => {
     try {
       const response = await createJob();
-      console.log("🚀 ~ handleCreateJob ~ response:", response);
 
       if (response.status === 200) {
         toast.success("Job created successfully!");
@@ -71,10 +71,21 @@ export default function Home() {
     }
   };
 
+  const handleRefreshJob = async (jobId: string) => {
+    try {
+      const refreshedJob = await getJobById(jobId);
+      return refreshedJob;
+    } catch (error) {
+      console.error("🚀 ~ handleRefreshJob ~ error:", error);
+      return null;
+    }
+  };
+
   const handleJobClick = (job: Job) => {
-    setSelectedJob(job)
-    setIsModalOpen(true)
-  }
+    setSelectedJob(job);
+    setIsModalOpen(true);
+  };
+
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
@@ -94,7 +105,7 @@ export default function Home() {
       ) : (
         <JobList jobs={jobs} onJobClick={handleJobClick} />
       )}
-      <JobModal job={selectedJob} isOpen={isModalOpen} onClose={handleCloseModal} />
+      <JobModal job={selectedJob} isOpen={isModalOpen} onClose={handleCloseModal} onRefresh={handleRefreshJob} />
     </main>
   )
 }

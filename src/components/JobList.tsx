@@ -1,4 +1,4 @@
-import { Job } from "@/types/job"
+import { Job } from "../@types";
 import { JobCard } from "./JobCard"
 
 interface JobListProps {

@@ -1,7 +1,13 @@
 export interface Job {
   id: string;
-  status: 'pending' | 'resolved';
+  status: JobStatus;
   imageUrl: string;
+}
+
+enum JobStatus {
+  PENDING = 'pending',
+  RESOLVED = 'resolved',
+  FAILED = 'failed'
 }
 
 interface CardProps {
